@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: gtfs-data-synchronizer
+  datasource:
+    jpa:
+      base:
+        jdbc-url: jdbc:postgresql://postgis-db:5432/gisdb
+        username: postgres
+        password: postgres
+        driver-class-name: org.postgresql.Driver
+      updates:
+        jdbc-url: jdbc:h2:mem:dynamic-db
+        driver-class-name: org.h2.Driver
+        username: sa
+        password:
+    jdbc:
+      base:
+        jdbc-url: jdbc:postgresql://postgis-db:5432/gisdb
+        username: postgres
+        password: postgres
+        driver-class-name: org.postgresql.Driver
+      updates:
+        jdbc-url: jdbc:h2:mem:dynamic-db
+        driver-class-name: org.h2.Driver
+        username: sa
+        password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  h2:
+    console:
+      enabled: true
+
+  sql:
+    init:
+      mode: always
+
+gtfs:
+  vehicle-positions-url: https://romamobilita.it/wp-content/uploads/drupal/rome_rtgtfs_vehicle_positions_feed.pb
+  static-data-url: https://romamobilita.it/wp-content/uploads/drupal/rome_static_gtfs.zip
+  static-data-md5-url: ${gtfs.static-data-url}.md5
+  updates-url: https://romamobilita.it/wp-content/uploads/drupal/rome_rtgtfs_trip_updates_feed.pb
