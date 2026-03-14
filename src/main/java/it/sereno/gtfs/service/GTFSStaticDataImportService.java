@@ -9,11 +9,7 @@ import it.sereno.gtfs.base.repository.StopRepository;
 import it.sereno.gtfs.base.repository.StopTimeTableRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +32,7 @@ public class GTFSStaticDataImportService {
 
 	@Transactional
 	public void importStopTimetableData() {
-		log.info( "Importing stop timetable..." );
+		log.debug( "Importing stop timetable..." );
 		final SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd" );
 
 		final String query = """
@@ -78,18 +74,18 @@ public class GTFSStaticDataImportService {
 			routeTimetable.getArrivalTimes().add( new RouteTimetable.ArrivalTime( tripId, arrivalTimeStr ) );
 		} );
 
-		log.info( "Deleting old timetable data..." );
+		log.debug( "Deleting old timetable data..." );
 		stopTimeTableRepository.deleteCollectionTable();
 		stopTimeTableRepository.deleteSecondaryTable();
 		stopTimeTableRepository.deleteMainTable();
-		log.info( "Inserting new timetable data..." );
+		log.debug( "Inserting new timetable data..." );
 		stopTimeTableRepository.saveAll( stopTimeTableMap.values() );
-		log.info( "Timetable synchronization completed!" );
+		log.debug( "Timetable synchronization completed!" );
 	}
 
 	@Transactional
 	public void importStopData() {
-		log.info( "Importing stops..." );
+		log.debug( "Importing stops..." );
 		final String query = """
 				select s.stop_id, s.stop_name, s.stop_lon, s.stop_lat
 				from stops s
@@ -112,16 +108,16 @@ public class GTFSStaticDataImportService {
 					.build();
 		} );
 
-		log.info( "Deleting old stop data..." );
+		log.debug( "Deleting old stop data..." );
 		stopRepository.deleteAll();
-		log.info( "Inserting {} new stops...", stops.size() );
+		log.debug( "Inserting {} new stops...", stops.size() );
 		stopRepository.saveAll( stops );
-		log.info( "Stop synchronization completed!" );
+		log.debug( "Stop synchronization completed!" );
 	}
 
 	@Transactional
 	public void importRouteData() {
-		log.info( "Importing routes..." );
+		log.debug( "Importing routes..." );
 		final String query = """
 				select distinct t.route_id as routeId, t.trip_headsign as shortName, s.shape_pt_lat, s.shape_pt_lon, s.shape_pt_sequence
 				from trips t
@@ -157,10 +153,10 @@ public class GTFSStaticDataImportService {
 				} )
 				.toList();
 
-		log.info( "Deleting old route data..." );
+		log.debug( "Deleting old route data..." );
 		routeRepository.deleteAll();
-		log.info( "Inserting {} new routes...", routes.size() );
+		log.debug( "Inserting {} new routes...", routes.size() );
 		routeRepository.saveAll( routes );
-		log.info( "Route synchronization completed!" );
+		log.debug( "Route synchronization completed!" );
 	}
 }

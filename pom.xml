@@ -98,6 +98,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<imageBuilder>paketobuildpacks/builder-jammy-base</imageBuilder>
 					<image>
 						<name>local/gtfs-synchronizer:latest</name>
 					</image>

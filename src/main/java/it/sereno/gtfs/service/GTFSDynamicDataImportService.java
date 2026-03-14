@@ -76,15 +76,12 @@ public class GTFSDynamicDataImportService {
 					String routeIdentifier = tripUpdate.getTrip().getRouteId();
 					String arrivalTime = time.format( DateTimeFormatter.ISO_LOCAL_TIME );
 					tripCorrections.get( tripIdentifier ).getCorrections().put( stopCode, arrivalTime );
-					if ( stopCode.equals( "71170" ) ) {
-						log.info( "Trip ID {}, Route Id {}, Stop Code {}, Arrival Time {}", tripIdentifier, routeIdentifier, stopCode, arrivalTime );
-					}
 				}
 			}
-			log.info( "Saving [{}] trip corrections", tripCorrections.size() );
+			log.debug( "Saving [{}] trip corrections", tripCorrections.size() );
 			tripCorrectionsRepository.deleteAll();
 			tripCorrectionsRepository.saveAll( tripCorrections.values() );
-			log.info( "Saved [{}] trip corrections", tripCorrections.size() );
+			log.debug( "Saved [{}] trip corrections", tripCorrections.size() );
 		}
 	}
 
@@ -140,7 +137,7 @@ public class GTFSDynamicDataImportService {
 				documents.add( doc );
 			}
 
-			log.info( "Saving [{}] vehicle positions", documents.size() );
+			log.debug( "Saving [{}] vehicle positions", documents.size() );
 			vehiclePositionRepository.deleteAll();
 			vehiclePositionRepository.saveAll( documents );
 
