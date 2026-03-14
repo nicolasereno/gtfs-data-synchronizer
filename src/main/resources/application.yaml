@@ -42,3 +42,12 @@ gtfs:
   static-data-url: https://romamobilita.it/wp-content/uploads/drupal/rome_static_gtfs.zip
   static-data-md5-url: ${gtfs.static-data-url}.md5
   updates-url: https://romamobilita.it/wp-content/uploads/drupal/rome_rtgtfs_trip_updates_feed.pb
+
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: classpath:keystore.p12
+    key-store-type: PKCS12
+    key-store-password:
+    key-alias: cert-keys
