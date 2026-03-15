@@ -2,21 +2,19 @@ package it.sereno.gtfs.controller;
 
 import it.sereno.gtfs.service.WaitTimeService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "https://smart-mobility.homelinuxserver.org")
+@CrossOrigin(origins = {"https://smart-mobility.homelinuxserver.org", "http://localhost:4200"})
+@RequestMapping("/api/wait-times")
 @RequiredArgsConstructor
 public class StopTimesController {
 
     private final WaitTimeService service;
 
-    @GetMapping("/api/wait-times/{stopIdentifier}")
+    @GetMapping("/{stopIdentifier}")
     public List<WaitTimeService.WaitTime> getStopTimes(@PathVariable final String stopIdentifier) {
         return service.getStopWaitTimes(stopIdentifier);
     }

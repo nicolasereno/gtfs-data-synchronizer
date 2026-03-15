@@ -1,33 +1,33 @@
 package it.sereno.gtfs.controller;
 
 import it.sereno.gtfs.service.GISDataService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "https://smart-mobility.homelinuxserver.org")
+@RequestMapping("/api/gis")
+@CrossOrigin(origins = {"https://smart-mobility.homelinuxserver.org", "http://localhost:4200"})
 @RequiredArgsConstructor
 public class GISDataController {
 
     private final GISDataService service;
 
-    @GetMapping("/api/vehicles/geojson")
+    @GetMapping("/vehicles")
     public GISDataService.GeoJsonFeatureCollection getVehiclesLayer(@RequestParam(required = false) final List<String> routeIds) {
         return service.getVehiclesLayer(routeIds);
     }
 
-    @GetMapping("/api/routes/geojson")
+    @GetMapping("/routes")
     public GISDataService.GeoJsonFeatureCollection getRoutesLayer(@RequestParam(required = false) final List<String> routeIds) {
         return service.getRoutesLayer(routeIds);
     }
 
-    @GetMapping("/api/stops/geojson")
-    public GISDataService.GeoJsonFeatureCollection getStopsLayer() {
+    @GetMapping("/stops")
+    public GISDataService.GeoJsonFeatureCollection getStopsLayer(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "public, max-age=864000");
         return service.getStopsLayer();
     }
 
