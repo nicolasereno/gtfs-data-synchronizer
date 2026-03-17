@@ -1,15 +1,10 @@
 package it.sereno.gtfs.service;
 
-import it.sereno.gtfs.base.model.Route;
 import it.sereno.gtfs.base.model.RouteTimetable;
-import it.sereno.gtfs.base.model.Stop;
 import it.sereno.gtfs.base.model.StopTimeTable;
-import it.sereno.gtfs.base.repository.RouteRepository;
-import it.sereno.gtfs.base.repository.StopRepository;
 import it.sereno.gtfs.base.repository.StopTimeTableRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -27,8 +21,6 @@ public class GTFSStaticDataImportService {
 
 	private final JdbcTemplate baseJdbcTemplate;
 	private final StopTimeTableRepository stopTimeTableRepository;
-	private final RouteRepository routeRepository;
-	private final StopRepository stopRepository;
 
 	@Transactional
 	public void importStopTimetableData() {
@@ -86,77 +78,42 @@ public class GTFSStaticDataImportService {
 	@Transactional
 	public void importStopData() {
 		log.debug( "Importing stops..." );
-		final String query = """
-				select s.stop_id, s.stop_name, s.stop_lon, s.stop_lat
-				from stops s
-				""";
-
-		GeometryFactory geometryFactory = new GeometryFactory( new PrecisionModel(), 4326 );
-
-		List<Stop> stops = baseJdbcTemplate.query( query, ( rs, rowNum ) -> {
-			String stopId = rs.getString( "stop_id" );
-			String stopName = rs.getString( "stop_name" );
-			double lon = rs.getDouble( "stop_lon" );
-			double lat = rs.getDouble( "stop_lat" );
-
-			Point point = geometryFactory.createPoint( new Coordinate( lon, lat ) );
-
-			return Stop.builder()
-					.id( stopId )
-					.name( stopName )
-					.location( point )
-					.build();
-		} );
-
 		log.debug( "Deleting old stop data..." );
-		stopRepository.deleteAll();
-		log.debug( "Inserting {} new stops...", stops.size() );
-		stopRepository.saveAll( stops );
+		baseJdbcTemplate.update( "delete from stop" );
+		log.debug( "Inserting new stops..." );
+		baseJdbcTemplate.update( """
+				insert into stop (id, name, location)
+				select s.stop_id, s.stop_name, st_setsrid(st_point(s.stop_lon, s.stop_lat), 4326)
+				from stops s
+				""" );
 		log.debug( "Stop synchronization completed!" );
 	}
 
 	@Transactional
 	public void importRouteData() {
 		log.debug( "Importing routes..." );
-		final String query = """
-				select distinct t.route_id as routeId, t.trip_headsign as shortName, s.shape_pt_lat, s.shape_pt_lon, s.shape_pt_sequence
-				from trips t
-				         join shapes s on t.shape_id = s.shape_id
-				order by t.route_id, s.shape_pt_sequence
-				""";
-
-		Map<String, Map<Integer, Coordinate>> routePoints = new LinkedHashMap<>();
-		Map<String, String> routeShortNames = new LinkedHashMap<>();
-
-		baseJdbcTemplate.query( query, rs -> {
-			String routeId = rs.getString( "routeId" );
-			String shortName = rs.getString( "shortName" );
-			double lat = rs.getDouble( "shape_pt_lat" );
-			double lon = rs.getDouble( "shape_pt_lon" );
-			int sequence = rs.getInt( "shape_pt_sequence" );
-
-			routePoints.computeIfAbsent( routeId, k -> new LinkedHashMap<>() ).put( sequence, new Coordinate( lon, lat ) );
-			routeShortNames.putIfAbsent( routeId, shortName );
-		} );
-
-		GeometryFactory geometryFactory = new GeometryFactory( new PrecisionModel(), 4326 );
-		List<Route> routes = routePoints.entrySet().stream()
-				.map( entry -> {
-					String routeId = entry.getKey();
-					List<Coordinate> coords = new ArrayList<>( entry.getValue().values() );
-					LineString lineString = geometryFactory.createLineString( coords.toArray( new Coordinate[0] ) );
-					return Route.builder()
-							.routeId( routeId )
-							.shortName( routeShortNames.get( routeId ) )
-							.path( lineString )
-							.build();
-				} )
-				.toList();
-
 		log.debug( "Deleting old route data..." );
-		routeRepository.deleteAll();
-		log.debug( "Inserting {} new routes...", routes.size() );
-		routeRepository.saveAll( routes );
+		baseJdbcTemplate.update( "delete from route" );
+		log.debug( "Inserting new routes..." );
+
+		Integer routeCount = baseJdbcTemplate.queryForObject( "select count(distinct route_id) from routes", Integer.class );
+		if ( routeCount == null ) {
+			routeCount = 0;
+		}
+
+		int blockSize = 100;
+		for ( int i = 0; i < routeCount; i += blockSize ) {
+			log.info( "Inserting routes block {}/{}...", i, routeCount );
+			baseJdbcTemplate.update( """
+					insert into route (route_id, short_name, path)
+					select t.route_id || '-' || t.direction_id, max(t.trip_headsign), st_setsrid(st_makeline(st_point(s.shape_pt_lon, s.shape_pt_lat) order by s.shape_pt_sequence), 4326)
+					from trips t
+					         join shapes s on t.shape_id = s.shape_id
+					where t.route_id in (select distinct route_id from routes order by route_id offset ? limit ?)
+					group by t.route_id, t.direction_id
+					""", i, blockSize );
+		}
+
 		log.debug( "Route synchronization completed!" );
 	}
 }

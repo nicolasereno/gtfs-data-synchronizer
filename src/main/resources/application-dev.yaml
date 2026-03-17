@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    jpa:
+      base:
+        jdbc-url: jdbc:postgresql://localhost:5433/gisdb
+    jdbc:
+      base:
+        jdbc-url: jdbc:postgresql://localhost:5433/gisdb
