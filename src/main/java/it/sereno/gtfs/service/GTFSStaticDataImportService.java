@@ -1,18 +1,11 @@
 package it.sereno.gtfs.service;
 
-import it.sereno.gtfs.base.model.RouteTimetable;
-import it.sereno.gtfs.base.model.StopTimeTable;
-import it.sereno.gtfs.base.repository.StopTimeTableRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -20,62 +13,51 @@ import java.util.Map;
 public class GTFSStaticDataImportService {
 
 	private final JdbcTemplate baseJdbcTemplate;
-	private final StopTimeTableRepository stopTimeTableRepository;
 
-	@Transactional
 	public void importStopTimetableData() {
 		log.debug( "Importing stop timetable..." );
-		final SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd" );
-
-		final String query = """
-				select s.stop_code, t.route_id, t.trip_headsign, t.trip_id, st.arrival_time
-					from stops s
-					join stop_times st on s.stop_id = st.stop_id
-					join trips t on st.trip_id = t.trip_id
-					join calendar_dates cd on t.service_id = cd.service_id and cd.date = '%s'
-				""".formatted( sdf.format( System.currentTimeMillis() ) );
-
-		Map<String, StopTimeTable> stopTimeTableMap = new LinkedHashMap<>();
-
-		baseJdbcTemplate.query( query, rs -> {
-			String stopCode = rs.getString( "stop_code" );
-			String routeId = rs.getString( "route_id" );
-			String tripId = rs.getString( "trip_id" );
-			String tripHeadsign = rs.getString( "trip_headsign" );
-			String arrivalTimeStr = rs.getString( "arrival_time" );
-
-			StopTimeTable stopTimeTable = stopTimeTableMap.computeIfAbsent( stopCode, k -> {
-				StopTimeTable stt = new StopTimeTable();
-				stt.setStopCode( k );
-				stt.setTimetable( new ArrayList<>() );
-				return stt;
-			} );
-
-			RouteTimetable routeTimetable = stopTimeTable.getTimetable().stream()
-					.filter( rt -> rt.getRouteIdentifier().equals( routeId ) && rt.getDirectionDescription().equals( tripHeadsign ) )
-					.findFirst()
-					.orElseGet( () -> {
-						RouteTimetable rt = new RouteTimetable();
-						rt.setRouteIdentifier( routeId );
-						rt.setDirectionDescription( tripHeadsign );
-						rt.setArrivalTimes( new ArrayList<>() );
-						stopTimeTable.getTimetable().add( rt );
-						return rt;
-					} );
-
-			routeTimetable.getArrivalTimes().add( new RouteTimetable.ArrivalTime( tripId, arrivalTimeStr ) );
-		} );
+		final LocalDate date = LocalDate.now();
 
 		log.debug( "Deleting old timetable data..." );
-		stopTimeTableRepository.deleteCollectionTable();
-		stopTimeTableRepository.deleteSecondaryTable();
-		stopTimeTableRepository.deleteMainTable();
+		baseJdbcTemplate.update( "delete from route_timetable_arrival_times" );
+		baseJdbcTemplate.update( "delete from route_timetable" );
+		baseJdbcTemplate.update( "delete from stop_time_table" );
+
 		log.debug( "Inserting new timetable data..." );
-		stopTimeTableRepository.saveAll( stopTimeTableMap.values() );
+
+		baseJdbcTemplate.update( """
+				insert into stop_time_table (stop_code)
+				select distinct s.stop_code
+				from stops s
+				join stop_times st on s.stop_id = st.stop_id
+				join trips t on st.trip_id = t.trip_id
+				join calendar_dates cd on t.service_id = cd.service_id and cd."date" = ?
+				where s.stop_code is not null
+				""", date );
+
+		baseJdbcTemplate.update( """
+				insert into route_timetable (route_identifier, direction_description, stop_code)
+				select distinct t.route_id, t.trip_headsign, s.stop_code
+				from stops s
+				join stop_times st on s.stop_id = st.stop_id
+				join trips t on st.trip_id = t.trip_id
+				join calendar_dates cd on t.service_id = cd.service_id and cd."date" = ?
+				where s.stop_code is not null
+				""", date );
+
+		baseJdbcTemplate.update( """
+				insert into route_timetable_arrival_times (route_timetable_id, trip_identifier, arrival_time)
+				select rt.id, t.trip_id, st.arrival_time
+				from route_timetable rt
+				join stops s on rt.stop_code = s.stop_code
+				join stop_times st on s.stop_id = st.stop_id
+				join trips t on st.trip_id = t.trip_id and t.route_id = rt.route_identifier and t.trip_headsign = rt.direction_description
+				join calendar_dates cd on t.service_id = cd.service_id and cd."date" = ?
+				""", date );
+
 		log.debug( "Timetable synchronization completed!" );
 	}
 
-	@Transactional
 	public void importStopData() {
 		log.debug( "Importing stops..." );
 		log.debug( "Deleting old stop data..." );
@@ -89,7 +71,6 @@ public class GTFSStaticDataImportService {
 		log.debug( "Stop synchronization completed!" );
 	}
 
-	@Transactional
 	public void importRouteData() {
 		log.debug( "Importing routes..." );
 		log.debug( "Deleting old route data..." );
@@ -101,7 +82,7 @@ public class GTFSStaticDataImportService {
 			routeCount = 0;
 		}
 
-		int blockSize = 100;
+		int blockSize = 50;
 		for ( int i = 0; i < routeCount; i += blockSize ) {
 			log.info( "Inserting routes block {}/{}...", i, routeCount );
 			baseJdbcTemplate.update( """
