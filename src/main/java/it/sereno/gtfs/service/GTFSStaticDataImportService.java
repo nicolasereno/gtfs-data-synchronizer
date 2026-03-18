@@ -77,23 +77,16 @@ public class GTFSStaticDataImportService {
 		baseJdbcTemplate.update( "delete from route" );
 		log.debug( "Inserting new routes..." );
 
-		Integer routeCount = baseJdbcTemplate.queryForObject( "select count(distinct route_id) from routes", Integer.class );
-		if ( routeCount == null ) {
-			routeCount = 0;
-		}
-
-		int blockSize = 50;
-		for ( int i = 0; i < routeCount; i += blockSize ) {
-			log.info( "Inserting routes block {}/{}...", i, routeCount );
-			baseJdbcTemplate.update( """
-					insert into route (route_id, short_name, path)
-					select t.route_id || '-' || t.direction_id, max(t.trip_headsign), st_setsrid(st_makeline(st_point(s.shape_pt_lon, s.shape_pt_lat) order by s.shape_pt_sequence), 4326)
-					from trips t
-					         join shapes s on t.shape_id = s.shape_id
-					where t.route_id in (select distinct route_id from routes order by route_id offset ? limit ?)
-					group by t.route_id, t.direction_id
-					""", i, blockSize );
-		}
+		baseJdbcTemplate.update( """
+				insert into route (shape_id, route_id, outbound, short_name, path)
+				select t.shape_id, t.route_id, t.direction_id = 1 as outbound, t.trip_headsign, s.shepe_geom
+				from (select distinct shape_id as shape, route_id, direction_id, trip_headsign, shape_id from trips a) t
+				         join
+				     (select shape_id, st_setsrid(st_makeline(st_point(shape_pt_lon, shape_pt_lat) order by shape_pt_sequence), 4326) as shepe_geom
+				      from shapes
+				      group by shape_id) s
+				     on s.shape_id = t.shape
+				""" );
 
 		log.debug( "Route synchronization completed!" );
 	}

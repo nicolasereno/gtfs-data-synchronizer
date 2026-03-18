@@ -16,7 +16,9 @@ import org.locationtech.jts.geom.LineString;
 public class Route {
 
 	@Id
+	private String shapeId;
 	private String routeId;
+	private boolean outbound;
 	private String shortName;
 	private LineString path;
 }
