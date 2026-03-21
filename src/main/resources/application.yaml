@@ -4,9 +4,9 @@ spring:
   datasource:
     jpa:
       base:
-        jdbc-url: jdbc:postgresql://postgis-db:5432/gisdb
-        username: postgres
-        password: postgres
+        jdbc-url: jdbc:postgresql://postgis:5432/gtfs
+        username: gtfs
+        password: gtfs
         driver-class-name: org.postgresql.Driver
       updates:
         jdbc-url: jdbc:h2:mem:dynamic-db
@@ -15,9 +15,9 @@ spring:
         password:
     jdbc:
       base:
-        jdbc-url: jdbc:postgresql://postgis-db:5432/gisdb
-        username: postgres
-        password: postgres
+        jdbc-url: jdbc:postgresql://postgis:5432/gtfs
+        username: gtfs
+        password: gtfs
         driver-class-name: org.postgresql.Driver
       updates:
         jdbc-url: jdbc:h2:mem:dynamic-db
@@ -44,10 +44,6 @@ gtfs:
   updates-url: https://romamobilita.it/wp-content/uploads/drupal/rome_rtgtfs_trip_updates_feed.pb
 
 server:
-  port: 8443
+  port: 80
   ssl:
-    enabled: true
-    key-store: classpath:keystore.p12
-    key-store-type: PKCS12
-    key-store-password:
-    key-alias: cert-keys
+    enabled: false

@@ -100,7 +100,7 @@
 				<configuration>
 					<imageBuilder>paketobuildpacks/builder-jammy-base</imageBuilder>
 					<image>
-						<name>local/gtfs-synchronizer:latest</name>
+						<name>gtfs-synchronizer:latest</name>
 					</image>
 					<excludes>
 						<exclude>
