@@ -6,19 +6,16 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class GTFSSyncScheduler {
+public class GTFSStaticDataSyncScheduler {
 
     private final GTFSStaticDataIngestService staticDataIngestService;
     private final GTFSStaticDataImportService staticDataImportService;
-    private final GTFSDynamicDataImportService dynamicDataImportService;
 
-    public GTFSSyncScheduler(
+    public GTFSStaticDataSyncScheduler(
             final GTFSStaticDataIngestService staticDataIngestService,
-            final GTFSStaticDataImportService staticDataImportService,
-            final GTFSDynamicDataImportService dynamicDataImportService) {
+            final GTFSStaticDataImportService staticDataImportService) {
         this.staticDataIngestService = staticDataIngestService;
         this.staticDataImportService = staticDataImportService;
-        this.dynamicDataImportService = dynamicDataImportService;
     }
 
     @Scheduled(cron = "0 30 * * * *")
@@ -44,17 +41,4 @@ public class GTFSSyncScheduler {
         log.debug("GTFS timetable data import completed successfully");
     }
 
-    @Scheduled(cron = "30 * * * * *")
-    public void syncCorrectionData() {
-        log.debug("Starting GTFS dynamic data synchronization check");
-        dynamicDataImportService.importGtfsUpdates();
-        log.debug("GTFS dynamic data import completed successfully");
-    }
-
-    @Scheduled(cron = "0 * * * * *")
-    public void syncVehiclePositions() {
-        log.debug("Starting GTFS dynamic gis data synchronization check");
-        dynamicDataImportService.fetchAndStoreVehiclePositions();
-        log.debug("GTFS dynamic gis data import completed successfully");
-    }
 }

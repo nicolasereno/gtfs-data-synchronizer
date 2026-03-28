@@ -39,8 +39,10 @@ public class GTFSDataSynchronizerApplication implements CommandLineRunner {
             log.info("Importing route data");
             importService.importRouteData();
         }
-        log.info("Importing timetable data");
-        importService.importStopTimetableData();
+        if (importService.checkStopTimetableDataImportNeeded()) {
+            log.info("Importing timetable data");
+            importService.importStopTimetableData();
+        }
         log.info("Initial synchronization complete: system is up and running!");
     }
 }

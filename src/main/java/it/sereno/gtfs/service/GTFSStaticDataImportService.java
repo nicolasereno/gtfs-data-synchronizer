@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -13,6 +14,13 @@ import java.time.LocalDate;
 public class GTFSStaticDataImportService {
 
 	private final JdbcTemplate baseJdbcTemplate;
+
+	public boolean checkStopTimetableDataImportNeeded() {
+		log.debug("Checking stop timetable data import");
+		final LocalDate date = LocalDate.now();
+		final List<LocalDate> dates = baseJdbcTemplate.queryForList("SELECT timetable_day FROM GTFS_DAY", LocalDate.class);
+		return dates.isEmpty() || !dates.getFirst().equals(date);
+	}
 
 	public void importStopTimetableData() {
 		log.debug( "Importing stop timetable..." );
@@ -28,20 +36,20 @@ public class GTFSStaticDataImportService {
 		baseJdbcTemplate.update( """
 				insert into stop_time_table (stop_code)
 				select distinct s.stop_code
-				from stops s
-				join stop_times st on s.stop_id = st.stop_id
-				join trips t on st.trip_id = t.trip_id
-				join calendar_dates cd on t.service_id = cd.service_id and cd."date" = ?
+				from GTFS_STOPS s
+				join GTFS_STOP_TIMES st on s.stop_id = st.stop_id
+				join GTFS_TRIPS t on st.trip_id = t.trip_id
+				join GTFS_CALENDAR_DATES cd on t.service_id = cd.service_id and cd."date" = ?
 				where s.stop_code is not null
 				""", date );
 
 		baseJdbcTemplate.update( """
 				insert into route_timetable (route_identifier, direction_description, stop_code)
 				select distinct t.route_id, t.trip_headsign, s.stop_code
-				from stops s
-				join stop_times st on s.stop_id = st.stop_id
-				join trips t on st.trip_id = t.trip_id
-				join calendar_dates cd on t.service_id = cd.service_id and cd."date" = ?
+				from GTFS_STOPS s
+				join GTFS_STOP_TIMES st on s.stop_id = st.stop_id
+				join GTFS_TRIPS t on st.trip_id = t.trip_id
+				join GTFS_CALENDAR_DATES cd on t.service_id = cd.service_id and cd."date" = ?
 				where s.stop_code is not null
 				""", date );
 
@@ -49,11 +57,14 @@ public class GTFSStaticDataImportService {
 				insert into route_timetable_arrival_times (route_timetable_id, trip_identifier, arrival_time)
 				select rt.id, t.trip_id, st.arrival_time
 				from route_timetable rt
-				join stops s on rt.stop_code = s.stop_code
-				join stop_times st on s.stop_id = st.stop_id
-				join trips t on st.trip_id = t.trip_id and t.route_id = rt.route_identifier and t.trip_headsign = rt.direction_description
-				join calendar_dates cd on t.service_id = cd.service_id and cd."date" = ?
+				join GTFS_STOPS s on rt.stop_code = s.stop_code
+				join GTFS_STOP_TIMES st on s.stop_id = st.stop_id
+				join GTFS_TRIPS t on st.trip_id = t.trip_id and t.route_id = rt.route_identifier and t.trip_headsign = rt.direction_description
+				join GTFS_CALENDAR_DATES cd on t.service_id = cd.service_id and cd."date" = ?
 				""", date );
+
+		baseJdbcTemplate.execute("DELETE FROM GTFS_DAY");
+		baseJdbcTemplate.update("INSERT INTO GTFS_DAY (timetable_day) VALUES (?)", date);
 
 		log.debug( "Timetable synchronization completed!" );
 	}
@@ -66,7 +77,7 @@ public class GTFSStaticDataImportService {
 		baseJdbcTemplate.update( """
 				insert into stop (id, name, location)
 				select s.stop_id, s.stop_name, st_setsrid(st_point(s.stop_lon, s.stop_lat), 4326)
-				from stops s
+				from GTFS_STOPS s
 				""" );
 		log.debug( "Stop synchronization completed!" );
 	}
@@ -80,10 +91,10 @@ public class GTFSStaticDataImportService {
 		baseJdbcTemplate.update( """
 				insert into route (shape_id, route_id, outbound, short_name, path)
 				select t.shape_id, t.route_id, t.direction_id = 1 as outbound, t.trip_headsign, s.shepe_geom
-				from (select distinct shape_id as shape, route_id, direction_id, trip_headsign, shape_id from trips a) t
+				from (select distinct shape_id as shape, route_id, direction_id, trip_headsign, shape_id from GTFS_TRIPS a) t
 				         join
 				     (select shape_id, st_setsrid(st_makeline(st_point(shape_pt_lon, shape_pt_lat) order by shape_pt_sequence), 4326) as shepe_geom
-				      from shapes
+				      from GTFS_SHAPES
 				      group by shape_id) s
 				     on s.shape_id = t.shape
 				""" );

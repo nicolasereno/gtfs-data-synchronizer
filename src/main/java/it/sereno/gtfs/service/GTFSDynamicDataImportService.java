@@ -45,7 +45,7 @@ public class GTFSDynamicDataImportService {
 			final VehiclePositionRepository vehiclePositionRepository,
 			final TripCorrectionsRepository tripCorrectionsRepository,
 			final @Value( "${gtfs.vehicle-positions-url}" ) String gtfsVehiclePositionsUrl,
-			final @Value( "${gtfs.updates-url}" ) String gtfsUpdatesUrl ) {
+			final @Value( "${gtfs.updates-url:}" ) String gtfsUpdatesUrl ) {
 		this.restTemplate = restTemplate;
 		this.vehiclePositionRepository = vehiclePositionRepository;
 		this.tripCorrectionsRepository = tripCorrectionsRepository;

@@ -4,7 +4,11 @@ CREATE TABLE IF NOT EXISTS GTFS_HASH (
     hash TEXT
 );
 
-CREATE TABLE IF NOT EXISTS agency (
+CREATE TABLE IF NOT EXISTS GTFS_DAY (
+    timetable_day DATE
+);
+
+CREATE TABLE IF NOT EXISTS GTFS_AGENCY (
     agency_id TEXT PRIMARY KEY,
     agency_name TEXT NOT NULL,
     agency_url TEXT NOT NULL,
@@ -14,7 +18,7 @@ CREATE TABLE IF NOT EXISTS agency (
     agency_fare_url TEXT
 );
 
-CREATE TABLE IF NOT EXISTS stops (
+CREATE TABLE IF NOT EXISTS GTFS_STOPS (
     stop_id TEXT PRIMARY KEY,
     stop_code TEXT,
     stop_name TEXT NOT NULL,
@@ -29,7 +33,7 @@ CREATE TABLE IF NOT EXISTS stops (
     wheelchair_boarding INTEGER
 );
 
-CREATE TABLE IF NOT EXISTS routes (
+CREATE TABLE IF NOT EXISTS GTFS_ROUTES (
     route_id TEXT PRIMARY KEY,
     agency_id TEXT,
     route_short_name TEXT,
@@ -41,7 +45,7 @@ CREATE TABLE IF NOT EXISTS routes (
     route_text_color TEXT
 );
 
-CREATE TABLE IF NOT EXISTS trips (
+CREATE TABLE IF NOT EXISTS GTFS_TRIPS (
     route_id TEXT NOT NULL,
     service_id TEXT NOT NULL,
     trip_id TEXT PRIMARY KEY,
@@ -54,7 +58,7 @@ CREATE TABLE IF NOT EXISTS trips (
     exceptional TEXT
 );
 
-CREATE TABLE IF NOT EXISTS stop_times (
+CREATE TABLE IF NOT EXISTS GTFS_STOP_TIMES (
     trip_id TEXT NOT NULL,
     arrival_time TEXT,
     departure_time TEXT,
@@ -68,7 +72,7 @@ CREATE TABLE IF NOT EXISTS stop_times (
     PRIMARY KEY (trip_id, stop_sequence)
 );
 
-CREATE TABLE IF NOT EXISTS calendar (
+CREATE TABLE IF NOT EXISTS GTFS_CALENDAR (
     service_id TEXT PRIMARY KEY,
     monday INTEGER NOT NULL,
     tuesday INTEGER NOT NULL,
@@ -81,14 +85,14 @@ CREATE TABLE IF NOT EXISTS calendar (
     end_date DATE NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS calendar_dates (
+CREATE TABLE IF NOT EXISTS GTFS_CALENDAR_DATES (
     service_id TEXT NOT NULL,
     date DATE NOT NULL,
     exception_type INTEGER NOT NULL,
     PRIMARY KEY (service_id, date)
 );
 
-CREATE TABLE IF NOT EXISTS fare_attributes (
+CREATE TABLE IF NOT EXISTS GTFS_FARE_ATTRIBUTES (
     fare_id TEXT PRIMARY KEY,
     price NUMERIC(10,2) NOT NULL,
     currency_type TEXT NOT NULL,
@@ -98,7 +102,7 @@ CREATE TABLE IF NOT EXISTS fare_attributes (
     transfer_duration INTEGER
 );
 
-CREATE TABLE IF NOT EXISTS fare_rules (
+CREATE TABLE IF NOT EXISTS GTFS_FARE_RULES (
     fare_id TEXT NOT NULL,
     route_id TEXT,
     origin_id TEXT,
@@ -106,7 +110,7 @@ CREATE TABLE IF NOT EXISTS fare_rules (
     contains_id TEXT
 );
 
-CREATE TABLE IF NOT EXISTS shapes (
+CREATE TABLE IF NOT EXISTS GTFS_SHAPES (
     shape_id TEXT NOT NULL,
     shape_pt_lat DOUBLE PRECISION NOT NULL,
     shape_pt_lon DOUBLE PRECISION NOT NULL,
@@ -115,7 +119,7 @@ CREATE TABLE IF NOT EXISTS shapes (
     PRIMARY KEY (shape_id, shape_pt_sequence)
 );
 
-CREATE TABLE IF NOT EXISTS frequencies (
+CREATE TABLE IF NOT EXISTS GTFS_FREQUENCIES (
     trip_id TEXT NOT NULL,
     start_time TEXT NOT NULL,
     end_time TEXT NOT NULL,
@@ -123,7 +127,7 @@ CREATE TABLE IF NOT EXISTS frequencies (
     exact_times INTEGER
 );
 
-CREATE TABLE IF NOT EXISTS transfers (
+CREATE TABLE IF NOT EXISTS GTFS_TRANSFERS (
     from_stop_id TEXT NOT NULL,
     to_stop_id TEXT NOT NULL,
     transfer_type INTEGER NOT NULL,
@@ -131,7 +135,7 @@ CREATE TABLE IF NOT EXISTS transfers (
     PRIMARY KEY (from_stop_id, to_stop_id)
 );
 
-CREATE TABLE IF NOT EXISTS feed_info (
+CREATE TABLE IF NOT EXISTS GTFS_FEED_INFO (
     feed_publisher_name TEXT NOT NULL,
     feed_publisher_url TEXT NOT NULL,
     feed_lang TEXT NOT NULL,
@@ -141,12 +145,12 @@ CREATE TABLE IF NOT EXISTS feed_info (
 );
 
 DROP INDEX IF EXISTS idx_trips_route_id;
-CREATE INDEX idx_trips_route_id ON trips(route_id);
+CREATE INDEX idx_trips_route_id ON GTFS_TRIPS(route_id);
 DROP INDEX IF EXISTS idx_trips_service_id;
-CREATE INDEX idx_trips_service_id ON trips(service_id);
+CREATE INDEX idx_trips_service_id ON GTFS_TRIPS(service_id);
 DROP INDEX IF EXISTS idx_stop_times_trip_id;
-CREATE INDEX idx_stop_times_trip_id ON stop_times(trip_id);
+CREATE INDEX idx_stop_times_trip_id ON GTFS_STOP_TIMES(trip_id);
 DROP INDEX IF EXISTS idx_stop_times_stop_id;
-CREATE INDEX idx_stop_times_stop_id ON stop_times(stop_id);
+CREATE INDEX idx_stop_times_stop_id ON GTFS_STOP_TIMES(stop_id);
 DROP INDEX IF EXISTS idx_shapes_shape_id;
-CREATE INDEX idx_shapes_shape_id ON shapes(shape_id);
+CREATE INDEX idx_shapes_shape_id ON GTFS_SHAPES(shape_id);

@@ -62,8 +62,7 @@ public class GTFSStaticDataIngestService {
 
     @SneakyThrows
     private String readHashFromDatabase() {
-        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS gtfs_hash (hash TEXT)");
-        final List<String> hashes = jdbcTemplate.queryForList("SELECT hash FROM gtfs_hash", String.class);
+        final List<String> hashes = jdbcTemplate.queryForList("SELECT hash FROM GTFS_HASH", String.class);
         return hashes.isEmpty()
                 ? null
                 : hashes.get(0);
@@ -81,9 +80,8 @@ public class GTFSStaticDataIngestService {
     }
 
     private void writeHashToDatabase(final String hash) {
-        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS gtfs_hash (hash TEXT)");
-        jdbcTemplate.execute("DELETE FROM gtfs_hash");
-        jdbcTemplate.update("INSERT INTO gtfs_hash (hash) VALUES (?)", hash);
+        jdbcTemplate.execute("DELETE FROM GTFS_HASH");
+        jdbcTemplate.update("INSERT INTO GTFS_HASH (hash) VALUES (?)", hash);
     }
 
     @SneakyThrows
@@ -101,15 +99,16 @@ public class GTFSStaticDataIngestService {
 
             try (final ZipFile zipFile = new ZipFile(tempFile.toFile())) {
 
-                final List<String> tables = List.of("trips", "stop_times", "agency", "stops", "routes", "shapes", "calendar_dates");
+                final List<String> entities = List.of("trips", "stop_times", "agency", "stops", "routes", "shapes", "calendar_dates");
 
                 CopyManager copyManager = new CopyManager(connection.unwrap(BaseConnection.class));
 
-                for (String table : tables) {
-                    statement.executeUpdate("TRUNCATE TABLE " + table);
+                for (String entity : entities) {
+                    final String tableName = "GTFS_" + entity.toUpperCase();
+                    statement.executeUpdate("TRUNCATE TABLE " + tableName);
 
                     try (
-                            final InputStream fileStream = open(zipFile, table + ".txt");
+                            final InputStream fileStream = open(zipFile, entity + ".txt");
                             final BufferedReader br = new BufferedReader(new InputStreamReader(fileStream));
                     ) {
                         String header = br.readLine();
@@ -118,7 +117,7 @@ public class GTFSStaticDataIngestService {
                                 COPY %s (%s)
                                 FROM STDIN
                                 WITH ( FORMAT csv, HEADER true )
-                                """.formatted(table, header);
+                                """.formatted(tableName, header);
 
                         copyManager.copyIn(sql, br);
                     }
