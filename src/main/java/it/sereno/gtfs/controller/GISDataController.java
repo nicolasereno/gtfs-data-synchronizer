@@ -1,5 +1,6 @@
 package it.sereno.gtfs.controller;
 
+import it.sereno.gtfs.base.model.StopWithDistance;
 import it.sereno.gtfs.service.GISDataService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,5 +32,8 @@ public class GISDataController {
         return service.getStopsLayer();
     }
 
-
+    @GetMapping("/nearest-stops")
+    public List<StopWithDistance> getNearestStops(@RequestParam final double lon, @RequestParam final double lat) {
+        return service.getNearestStops(lon, lat);
+    }
 }

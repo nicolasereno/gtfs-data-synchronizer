@@ -103,7 +103,7 @@
 						<buildpacks>
 							<buildpack>paketobuildpacks/java</buildpack>
 						</buildpacks>
-						<name>local/gtfs-synchronizer:latest</name>
+						<name>192.168.1.51:5000/gtfs-synchronizer:latest</name>
 					</image>
 					<excludes>
 						<exclude>

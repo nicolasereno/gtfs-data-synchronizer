@@ -1,5 +1,6 @@
 package it.sereno.gtfs.service;
 
+import it.sereno.gtfs.base.model.StopWithDistance;
 import it.sereno.gtfs.base.repository.RouteRepository;
 import it.sereno.gtfs.base.repository.StopRepository;
 import it.sereno.gtfs.base.repository.VehiclePositionRepository;
@@ -23,6 +24,10 @@ public class GISDataService {
 	private final VehiclePositionRepository repository;
 	private final RouteRepository routeRepository;
 	private final StopRepository stopRepository;
+
+	public List<StopWithDistance> getNearestStops( final double lon, final double lat ) {
+		return stopRepository.findNearestStops( lon, lat, 2000, 10 );
+	}
 
 	public GeoJsonFeatureCollection getVehiclesLayer( final List<String> routeIds ) {
 

@@ -53,7 +53,6 @@ public class GTFSDynamicDataImportService {
 		this.gtfsUpdatesUrl = gtfsUpdatesUrl;
 	}
 
-	@SneakyThrows
 	public void importGtfsUpdates() {
 		try ( InputStream inputStream = new URI( gtfsUpdatesUrl ).toURL().openStream() ) {
 			GtfsRealtime.FeedMessage feed = GtfsRealtime.FeedMessage.parseFrom( inputStream );
@@ -82,6 +81,8 @@ public class GTFSDynamicDataImportService {
 			tripCorrectionsRepository.deleteAll();
 			tripCorrectionsRepository.saveAll( tripCorrections.values() );
 			log.debug( "Saved [{}] trip corrections", tripCorrections.size() );
+		} catch ( Exception e ) {
+			log.error( "Failed to import GTFS updates feed: [{}]", e.getMessage() );
 		}
 	}
 

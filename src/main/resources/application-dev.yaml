@@ -6,3 +6,5 @@ spring:
     jdbc:
       base:
         jdbc-url: jdbc:postgresql://localhost:5433/gtfs
+server:
+  port: 8080
