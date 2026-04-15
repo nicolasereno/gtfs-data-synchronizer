@@ -3,8 +3,12 @@ spring:
     jpa:
       base:
         jdbc-url: jdbc:postgresql://localhost:5433/gtfs
+        username: gtfs
+        password: gtfs
     jdbc:
       base:
         jdbc-url: jdbc:postgresql://localhost:5433/gtfs
+        username: gtfs
+        password: gtfs
 server:
   port: 8080

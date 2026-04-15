@@ -23,12 +23,12 @@ public class GTFSStaticDataSyncScheduler {
         log.debug("Starting GTFS static data synchronization check");
         final String newHash = staticDataIngestService.dataImportNeeded();
         if (newHash != null) {
-            log.debug("New GTFS static data found (hash: {}), starting import", newHash);
+            log.info("New GTFS static data found (hash: {}), starting import", newHash);
             staticDataIngestService.importStaticData(newHash);
             staticDataImportService.importStopData();
             staticDataImportService.importRouteData();
             staticDataImportService.importStopTimetableData();
-            log.debug("GTFS static data import completed successfully");
+            log.info("GTFS static data import completed successfully");
         } else {
             log.debug("No GTFS static data update needed");
         }
@@ -36,9 +36,9 @@ public class GTFSStaticDataSyncScheduler {
 
     @Scheduled(cron = "0 0 0 * * *")
     public void syncTimetableData() {
-        log.debug("Starting GTFS timetable data synchronization check");
+        log.info("Starting GTFS timetable data synchronization check");
         staticDataImportService.importStopTimetableData();
-        log.debug("GTFS timetable data import completed successfully");
+        log.info("GTFS timetable data import completed successfully");
     }
 
 }
